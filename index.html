@@ -60,13 +60,11 @@
     <!-- === MENU UTAMA (FULL SCREEN) === -->
     <div id="mainMenu" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 bg-[#FFE369] overflow-y-auto">
         
-        <!-- Wrapper Content agar center vertikal tapi aman -->
         <div class="flex flex-col items-center justify-center w-full max-w-sm my-auto">
             <!-- Logo Concrete -->
             <div class="mb-6 relative group flex-shrink-0">
                 <div class="absolute -inset-1 bg-stone-900 rounded-full blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-                <!-- Mengurangi ukuran logo menjadi w-28 h-28 agar lebih pas -->
-                <img src="https://i.ibb.co.com/TDwvRPmH/axp-GRz3c-400x400.png" alt="Concrete Logo" class="relative w-28 h-28 rounded-full border-4 border-stone-900 shadow-2xl mx-auto object-cover transform hover:scale-105 transition duration-500">
+                <img src="https://i.ibb.co.com/TDwvRPmH/axp-GRz3c-400x400.png" alt="Concrete Logo" class="relative w-32 h-32 rounded-full border-4 border-stone-900 shadow-2xl mx-auto object-contain bg-stone-900 p-1 transform hover:scale-105 transition duration-500">
             </div>
 
             <div class="mb-8 text-center flex-shrink-0">
@@ -95,9 +93,7 @@
             
             <!-- CREDITS SECTION -->
             <a href="https://x.com/SuperSkyzee" target="_blank" class="mt-8 flex items-center gap-3 px-4 py-2 bg-white/20 rounded-full border border-stone-900/20 hover:bg-white/60 hover:border-stone-900 hover:shadow-lg transition-all group backdrop-blur-sm cursor-pointer no-underline flex-shrink-0">
-                <!-- PFP -->
                 <img src="https://i.ibb.co.com/Gm47LMg/y-EFjlr-YC-400x400.jpg" alt="SuperSkyzee" class="w-10 h-10 rounded-full border-2 border-stone-900 shadow-sm object-cover">
-                
                 <div class="flex flex-col text-left">
                     <span class="text-[10px] text-stone-600 font-bold leading-tight uppercase tracking-wider">Created by</span>
                     <span class="text-sm text-stone-900 font-black leading-tight group-hover:text-stone-700 transition-colors">@SuperSkyzee</span>
@@ -106,11 +102,11 @@
         </div>
         
         <div class="mt-4 text-stone-900/40 text-xs font-mono font-bold flex-shrink-0">
-            v2.7 • FIXED LOGO
+            v3.1 • DARK MODE HEAD
         </div>
     </div>
 
-    <!-- === GAME UI (Initially Hidden) === -->
+    <!-- === GAME UI === -->
     <div id="gameUI" class="hidden flex-col items-center justify-center w-full max-w-md mx-auto relative z-10 p-4 opacity-0 transition-opacity duration-500">
         
         <!-- Header Info -->
@@ -134,11 +130,11 @@
         </div>
 
         <!-- Game Container (The Box) -->
-        <div id="gameContainer" class="relative mx-auto border-4 border-stone-900 rounded-lg bg-[#FFE369] overflow-hidden touch-none focus:outline-none" tabindex="0">
+        <div id="gameContainer" class="relative mx-auto border-4 border-stone-900 rounded-lg bg-[#EAB308] overflow-hidden touch-none focus:outline-none" tabindex="0">
             <canvas id="gameCanvas" class="block" style="width: 100%; height: 100%;"></canvas>
             
             <!-- GAME OVER OVERLAY -->
-            <div id="gameOverOverlay" class="hidden absolute inset-0 flex items-center justify-center bg-[#FFE369]/95 z-20 backdrop-blur-sm">
+            <div id="gameOverOverlay" class="hidden absolute inset-0 flex items-center justify-center bg-[#EAB308]/95 z-20 backdrop-blur-sm">
                 <div class="text-center text-stone-900 p-6 w-full">
                     <h2 class="text-4xl font-black mb-1 text-stone-900 tracking-tighter">CRUMBLED!</h2>
                     <p class="mb-8 text-stone-800 text-lg font-bold">Final Score: <span id="finalScoreDisplay" class="text-stone-900 text-3xl block mt-2">0</span></p>
@@ -210,9 +206,13 @@
         let nextDirQueue = [];
         let touchStart = { x: 0, y: 0 };
 
-        // Load Moai Image (Food)
+        // Images
         const moaiImage = new Image();
         moaiImage.src = "https://i.ibb.co.com/d4TSnPGm/Chat-GPT-Image-13-Jan-2026-00-53-03.png";
+        
+        // Head Image (Logo Concrete)
+        const headImage = new Image();
+        headImage.src = "https://i.ibb.co.com/TDwvRPmH/axp-GRz3c-400x400.png";
 
         // Init UI
         highScoreDisplay.textContent = highScore;
@@ -220,32 +220,19 @@
         // --- HD CANVAS LOGIC ---
         function resizeCanvas() {
             const dpr = window.devicePixelRatio || 1;
-            
-            // Padding aman untuk layar HP (kiri kanan 24px + border container 8px)
             const maxWidth = Math.min(window.innerWidth - 48, 400);
-            
-            // Hitung ukuran logis (harus kelipatan GRID_SIZE agar pas)
             const logicalWidth = Math.floor(maxWidth / GRID_SIZE) * GRID_SIZE;
             
-            // 1. Set ukuran fisik canvas (dikali DPR untuk ketajaman)
             canvas.width = logicalWidth * dpr;
             canvas.height = logicalWidth * dpr;
-            
-            // 2. Set ukuran CSS canvas
             canvas.style.width = `${logicalWidth}px`;
             canvas.style.height = `${logicalWidth}px`;
             
-            // 3. FIX SPACE KOSONG & CUT OFF:
-            // Paksa width container mengikuti logicalWidth.
-            // PENTING: Set box-sizing ke content-box agar width ini adalah area dalam (canvas),
-            // dan border digambar DI LUAR area ini.
             container.style.boxSizing = 'content-box';
             container.style.width = `${logicalWidth}px`;
             container.style.height = `${logicalWidth}px`;
 
-            // Scale context untuk drawing
             ctx.scale(dpr, dpr);
-            // Penting untuk HD: Gunakan kualitas smoothing tinggi
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             
@@ -257,7 +244,6 @@
         function generateFood() {
             const logicalWidth = parseInt(canvas.style.width);
             const logicalHeight = parseInt(canvas.style.height);
-            
             const cols = Math.floor(logicalWidth / GRID_SIZE);
             const rows = Math.floor(logicalHeight / GRID_SIZE);
             
@@ -282,30 +268,22 @@
 
         function startGame() {
             stopGame();
-            
-            // Reset State
             snake = [{ x: 5, y: 10 }, { x: 4, y: 10 }, { x: 3, y: 10 }];
             dir = { x: 1, y: 0 };
             nextDirQueue = [];
-            
             resizeCanvas();
             food = generateFood();
-            
             score = 0;
             scoreDisplay.textContent = score;
-
             gameState = 'PLAYING';
             isGameRunning = true;
-            
             mainMenu.classList.add('hidden');
             gameUI.classList.remove('hidden');
             setTimeout(() => {
                 gameUI.classList.remove('opacity-0');
             }, 10);
-            
             gameOverOverlay.classList.add('hidden');
             container.focus();
-
             gameLoop();
         }
 
@@ -390,13 +368,11 @@
         function handleGameOver() {
             stopGame();
             gameState = 'GAMEOVER';
-            
             if (score > highScore) {
                 highScore = score;
                 highScoreDisplay.textContent = highScore;
                 localStorage.setItem('moai_snake_hs', score.toString());
             }
-
             finalScoreDisplay.textContent = score;
             gameOverOverlay.classList.remove('hidden');
         }
@@ -405,8 +381,8 @@
             const logicalWidth = parseInt(canvas.style.width);
             const logicalHeight = parseInt(canvas.style.height);
 
-            // Clear Background
-            ctx.fillStyle = '#FFE369';
+            // Background Arena: Kuning Gelap (#EAB308)
+            ctx.fillStyle = '#EAB308';
             ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
             // Grid
@@ -424,16 +400,12 @@
                 const fy = food.y * GRID_SIZE;
                 
                 if (moaiImage.complete && moaiImage.naturalWidth !== 0) {
-                    // Draw HD: Ukuran dikurangi jadi 1.3x biar ga kegedean
                     const size = GRID_SIZE * 1.3; 
                     const offset = (size - GRID_SIZE) / 2;
-                    
                     ctx.save();
-                    // Drop shadow tipis agar sedikit pop tapi tetap flat
                     ctx.shadowColor = "rgba(0,0,0,0.1)"; 
                     ctx.shadowBlur = 2;
                     ctx.shadowOffsetY = 1;
-                    
                     ctx.drawImage(moaiImage, fx - offset, fy - offset, size, size);
                     ctx.restore();
                 } else {
@@ -441,25 +413,55 @@
                     ctx.fillRect(fx + 2, fy + 2, 16, 16);
                 }
 
-                // Snake
+                // --- Ular dengan Badan Bulat & Kepala Logo ---
                 snake.forEach((segment, i) => {
+                    const cx = segment.x * GRID_SIZE + GRID_SIZE / 2;
+                    const cy = segment.y * GRID_SIZE + GRID_SIZE / 2;
+                    const radius = (GRID_SIZE / 2) - 1;
+
                     if (i === 0) {
-                        ctx.fillStyle = '#1c1917'; // Head
-                        ctx.fillRect(segment.x * GRID_SIZE + 1, segment.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
-                        
-                        ctx.fillStyle = '#FFE369'; // Eyes
-                        if(dir.x > 0) ctx.fillRect(segment.x*GRID_SIZE+14, segment.y*GRID_SIZE+4, 4, 4); 
-                        else if(dir.x < 0) ctx.fillRect(segment.x*GRID_SIZE+2, segment.y*GRID_SIZE+4, 4, 4);
-                        else ctx.fillRect(segment.x*GRID_SIZE+4, segment.y*GRID_SIZE+4, 4, 4);
+                        // KEPALA: Gambar Logo Concrete dengan Efek Dark & Vinyet
+                        if (headImage.complete && headImage.naturalWidth !== 0) {
+                            ctx.save();
+                            // Clip lingkaran untuk kepala
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, radius + 2, 0, 2 * Math.PI);
+                            ctx.clip();
+                            
+                            const headSize = GRID_SIZE + 4;
+                            const headX = segment.x * GRID_SIZE - 2;
+                            const headY = segment.y * GRID_SIZE - 2;
+
+                            // Gambar logo
+                            ctx.drawImage(headImage, headX, headY, headSize, headSize);
+                            
+                            // 1. Radial Gradient untuk Vinyet (Gelap di Pinggir)
+                            const gradient = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius + 2);
+                            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.2)');   // Tengah: Sedikit gelap (20%)
+                            gradient.addColorStop(0.7, 'rgba(0, 0, 0, 0.4)'); // Transisi
+                            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');   // Pinggir: Gelap banget (70%)
+                            
+                            ctx.fillStyle = gradient;
+                            ctx.fillRect(headX, headY, headSize, headSize);
+
+                            ctx.restore();
+                        } else {
+                            // Fallback jika gambar belum load
+                            ctx.fillStyle = '#1c1917';
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                            ctx.fill();
+                        }
                     } else {
-                        ctx.fillStyle = '#44403c'; // Body
-                        ctx.fillRect(segment.x * GRID_SIZE + 1, segment.y * GRID_SIZE + 1, GRID_SIZE - 2, GRID_SIZE - 2);
+                        // BADAN: Lingkaran (Bulat)
+                        ctx.fillStyle = '#44403c'; // Stone-700
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+                        ctx.fill();
                     }
                 });
             }
         }
-
-        // --- EVENT LISTENERS ---
 
         window.addEventListener('keydown', (e) => {
             if (gameState === 'PLAYING') {
@@ -488,15 +490,11 @@
 
         container.addEventListener('touchend', (e) => {
             if (!isGameRunning) return;
-            
             const touchEndX = e.changedTouches[0].clientX;
             const touchEndY = e.changedTouches[0].clientY;
-            
             const diffX = touchStart.x - touchEndX;
             const diffY = touchStart.y - touchEndY;
-
             if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) return;
-
             if (Math.abs(diffX) > Math.abs(diffY)) {
                 if (diffX > 0) handleInput('ArrowLeft');
                 else handleInput('ArrowRight');
